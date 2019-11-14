@@ -3,16 +3,22 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import datetime
+import pathlib
 
-import nlp_module
 from book_data import BookData
 
+nlp_host = "http://nlp-server"
 
 class NaverBookSearcher() :
     def __init__(self) :
         # 기본 BookData 객체로 생성
         # 사용하기 전에 반드시 book 멤버를 assign할 것
+        p = pathlib.Path("./log/")
+        if not p.exists() :
+            p.mkdir(parents=True)
+        
         self.f = None
+        self.curt = datetime.datetime.now()
 
     def _search_for_book(self, title, category=True) :
         self.book.searched_title = title
@@ -43,7 +49,7 @@ class NaverBookSearcher() :
 
         if (res_code == 200):
             book_dict = response.json()
-            self.f.write(book_dict)
+            self.f.write(str(book_dict))
 
             if (len(book_dict['items']) >= 1):
                 highest_accuracy = 0.0
@@ -57,7 +63,15 @@ class NaverBookSearcher() :
                     temp_title = temp_title.replace('<b>', '').replace('</b>', '')
                     print("{} 검색됨".format(self.book.title))
                     self.f.write("{} 검색됨\n".format(self.book.title))
-                    self.book.search_accuracy = nlp_module.search_accsuracy_examine(self.book.ori_title, temp_title)
+
+                    url = nlp_host + "/nlp/accuracy/title?ori_title=" + parse.quote(self.book.ori_title) + "&searched_title=" + parse.quote(temp_title)
+                    res = requests.get(url)
+                    if res.status_code == 200 :
+                        self.book.search_accuracy = res.json()["result"]
+                    else :
+                        print("nlp 모듈과의 통신 실패")
+                        return None
+                    
                     print('정확도: {}'.format(self.book.search_accuracy))
                     self.f.write('정확도: {}\n'.format(self.book.search_accuracy))
                     if self.book.search_accuracy > highest_accuracy :
@@ -89,7 +103,7 @@ class NaverBookSearcher() :
         self.book.publisher = book_item['publisher']
         self.book.isbn = book_item['isbn']
         self.book.pubdate = book_item['pubdate']
-        self.book.description = ''
+        self.book.description = book_item['description'].replace('<b>', '').replace('</b>', '')
         self.book.translator = ''
 
         link = book_item['link']
@@ -101,6 +115,8 @@ class NaverBookSearcher() :
         self.f.write("검색된 책 제목: {}".format(self.book.title))
 
     def from_titles(self, title_list) :
+        self.f = open("./log/Naver Book Search Log_{} {}h{}m{}s.txt".
+                 format(self.curt.date(), self.curt.hour, self.curt.minute, self.curt.second), "w", encoding='utf-8')
         books = []
 
         for i, title in enumerate(title_list) :
@@ -112,7 +128,13 @@ class NaverBookSearcher() :
         return books
 
 
-    def from_title(self, title) :
+    def from_title(self, title, open_new_log=False) :
+        if open_new_log == True or self.f == None :
+            self.f = open("./log/Naver Book Search Log_{} {}h{}m{}s.txt".
+                 format(self.curt.date(), self.curt.hour, self.curt.minute, self.curt.second), "w", encoding='utf-8')
+        
+        self.book = BookData()
+
         self.book.ori_title = title
 
         print("최초 검색어 '{}'".format(title))
@@ -130,7 +152,18 @@ class NaverBookSearcher() :
         if (item is not None) :
             self._get_data_from_searched_item(item)
         else :
-            titles = nlp_module.make_alterative_search_set(title)
+            titles = []
+
+            url = nlp_host + "/nlp/alternative?title=" + parse.quote(title)
+            res = requests.get(url)
+            if res.status_code == 200 :
+                titles = res.json()["result"]
+            else :
+                print("nlp 모듈과의 통신 실패")
+                return None
+            
+            
+
             print("alternative set made {}".format(titles))
             self.f.write("alternative set made {}\n".format(titles))
             for temp in titles :
@@ -155,6 +188,7 @@ class NaverBookSearcher() :
 
         self.book.ori_title = title
         self.f.write('\n\n')
+        self.search_finished()
         return self.book
 
     def _crawl_description(self, link):
@@ -175,12 +209,12 @@ class NaverBookSearcher() :
                     'book_info_inner' in div['class'] :
                 for em in div('em'):
                     if em.get_text() == '역자':
-                        #print('역자 있음')
+                        print('역자 있음')
                         self.book.translator = em.next_sibling.next_sibling.get_text()
 
-            elif 'id' in div.attrs and \
+            if 'id' in div.attrs and \
                     (div['id'] == 'bookIntroContent' or div['id'] == 'pubReviewContent') :
-                #print('description 있음')
+                print('description 있음')
                 self.book.description = div('p')[0].get_text()
 
                 self.book.description = (self.book.description.replace('\n', '').replace('\r', ''))
@@ -189,3 +223,4 @@ class NaverBookSearcher() :
 
     def search_finished(self) :
         self.f.close()
+        self.f = None

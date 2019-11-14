@@ -1,0 +1,30 @@
+<head>
+    <meta charset="UTF-8">
+    <title>책 검색 Front</title>
+    <script>
+        function searchBook(){
+        var searcherUrl = "http://localhost:8000";
+        var title = document.getElementById("book-title").value;
+        
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() { 
+            if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            {
+                var txt=xmlHttp.responseText;//txt를 사용해서 알맞은 작업 수행
+                document.getElementById("output").value = "result";
+            }
+        }
+        xmlHttp.open( "GET", searcherUrl + "/booksearch?title=" + title, true ); // false for synchronous request
+        xmlHttp.send(null);
+
+
+        }
+        
+    </script>
+</head>
+
+
+<h3>책 검색 시스템입니다.</h3>
+<input type="text" id="book-title">
+<input type="button" value="검색" onclick="searchBook()">
+<p id="output">out</p>

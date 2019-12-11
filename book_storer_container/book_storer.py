@@ -1,9 +1,12 @@
 from collections import defaultdict
 import requests
 import pathlib
-import random, json, datetime
+import random
+import json
+import datetime
 
-import json_file, nlp_module
+import json_file
+import nlp_module
 import book_data
 
 class BookStorer :

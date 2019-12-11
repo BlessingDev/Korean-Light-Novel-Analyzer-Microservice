@@ -5,9 +5,20 @@ import naver_book_searcher
 import json_file
 
 app = Flask(__name__)
-api = Api(app)
 
 nbs = naver_book_searcher.NaverBookSearcher()
+
+@app.route('/')
+def index() :
+    html = \
+    "<h1>search 서버입니다.</h1>"\
+    "<h3>API</h3>"\
+    "<p>/booksearch"\
+    "<li>param: title(string)</li></p>"
+
+    return html
+
+api = Api(app)
 
 class SearchBook(Resource):
     def get(self):
@@ -26,4 +37,4 @@ class SearchBook(Resource):
 api.add_resource(SearchBook, '/booksearch')
 
 if __name__ == '__main__':
-    app.run('0.0.0.0', port=80)
+    app.run('0.0.0.0', port=8080, debug=False)

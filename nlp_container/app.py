@@ -7,6 +7,20 @@ import nlp_module
 app = Flask(__name__)
 api = Api(app)
 
+@app.route('/')
+def index() :
+    html = \
+    "<h1>nlp 서버입니다.</h1>"\
+    "<h3>API</h3>"\
+    "<p>/nlp/accuracy/title<"\
+    "<li>param: ori_title(string)</li>"\
+    "<li>param: searched_title(string)</li></p>"\
+    "<p>/nlp/alternative"\
+    "<li>param: title(string)</li></p>"\
+
+
+    return html
+
 class GetAccuracy(Resource):
     def get(self):
         try:
@@ -40,4 +54,4 @@ api.add_resource(GetAccuracy, '/nlp/accuracy/title')
 api.add_resource(AlternativeTitle, '/nlp/alternative')
 
 if __name__ == "__main__" :
-    app.run(host="0.0.0.0", port=80, debug=False)
+    app.run(host="0.0.0.0", port=7946, debug=False)

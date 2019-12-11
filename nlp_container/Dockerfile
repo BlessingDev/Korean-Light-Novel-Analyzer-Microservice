@@ -17,7 +17,7 @@ RUN apt remove -y git
 WORKDIR /
 COPY . /app
 
-EXPOSE 80
+EXPOSE 7946
 
 WORKDIR /app
 CMD ["python3", "app.py"]

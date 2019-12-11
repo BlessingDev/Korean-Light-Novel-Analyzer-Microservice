@@ -7,7 +7,7 @@ import pathlib
 
 from book_data import BookData
 
-nlp_host = "http://nlp-server"
+nlp_host = "http://localhost:7946"
 
 class NaverBookSearcher() :
     def __init__(self) :
